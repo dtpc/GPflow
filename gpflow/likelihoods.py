@@ -20,6 +20,7 @@ import numpy as np
 from .param import Parameterized, Param, ParamList
 from ._settings import settings
 from .quadrature import hermgauss
+from .param import AutoFlow
 
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -181,6 +182,33 @@ class Likelihood(Parameterized):
 
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
+
+    # Autoflow wrapped methods prefixed with 'compute_' to allow direct
+    # evaluation
+
+    @AutoFlow((np.float64,), (np.float64,))
+    def compute_logp(self, F, Y):
+        return self.logp(F, Y)
+
+    @AutoFlow((np.float64,))
+    def compute_conditional_mean(self, F):
+        return self.conditional_mean(F)
+
+    @AutoFlow((np.float64,))
+    def compute_conditional_variance(self, F):
+        return self.conditional_variance(F)
+
+    @AutoFlow((np.float64,), (np.float64,))
+    def compute_predict_mean_and_var(self, Fmu, Fvar):
+        return self.predict_mean_and_var(Fmu, Fvar)
+
+    @AutoFlow((np.float64,), (np.float64,), (np.float64,))
+    def compute_predict_density(self, Fmu, Fvar, Y):
+        return self.predict_density(Fmu, Fvar, Y)
+
+    @AutoFlow((np.float64,), (np.float64,), (np.float64,))
+    def compute_variational_expectations(self, Fmu, Fvar, Y):
+        return self.variational_expectations(Fmu, Fvar, Y)
 
 
 class Gaussian(Likelihood):
