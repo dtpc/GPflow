@@ -99,6 +99,7 @@ class Model(Parameterized):
 
         self.num_fevals = 0  # Keeps track of how often _objective is called
         self._session = None
+        self.obj_func = 'marginal_likelihood'
 
     @property
     def name(self):
@@ -122,6 +123,14 @@ class Model(Parameterized):
     def __setstate__(self, d):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
+
+    def marginal_likelihood(self):
+
+        with self.tf_mode():
+            f = self.build_likelihood() + self.build_prior()
+            g = tf.gradients(f, self._free_vars)[0]
+
+        return f, g
 
     def compile(self, session=None, graph=None, optimizer=None):
         """
@@ -152,9 +161,8 @@ class Model(Parameterized):
             self._free_vars = tf.Variable(self.get_free_state())
 
             self.make_tf_array(self._free_vars)
-            with self.tf_mode():
-                f = self.build_likelihood() + self.build_prior()
-                g = tf.gradients(f, self._free_vars)[0]
+
+            f, g = getattr(self, self.obj_func)()
 
             self._minusF = tf.negative(f, name='objective')
             self._minusG = tf.negative(g, name='grad_objective')
