@@ -50,7 +50,7 @@ class GPR(GPModel):
         Y = DataHolder(Y, on_shape_change='pass')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name)
         self.num_latent = Y.shape[1]
-        valid_obj_funcs = ('marginal_likelihood', 'loo_cv_loss')
+        valid_obj_funcs = ('marginal_likelihood', 'neg_cv_loss')
         if obj_func not in valid_obj_funcs:
             raise ValueError("obj_func '{}' not in '{}'".format(obj_func, valid_obj_funcs))
 
@@ -100,7 +100,7 @@ class GPR(GPModel):
             fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(Y)[1]])
         return fmean, fvar
 
-    def loo_cv_loss(self):
+    def neg_cv_loss(self):
         """ Build the Leave-One-Out log predictive probability loss
             function
         """
