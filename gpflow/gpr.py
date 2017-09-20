@@ -104,20 +104,26 @@ class GPR(GPModel):
         """ Build the Leave-One-Out log predictive probability loss
             function
         """
-        def density_i(i):
-            Xi = tf.constant(X[np.newaxis, i, :])
-            Yi = tf.constant(Y[np.newaxis, i, :])
-            Xjs = tf.constant(np.delete(X, i, axis=0))
-            Yjs = tf.constant(np.delete(Y, i, axis=0))
+
+        def density_i(i, n):
+            ind = slice(i, i+n)
+            Xi = tf.constant(X[ind, :])
+            Yi = tf.constant(Y[ind, :])
+            Xjs = tf.constant(np.delete(X, ind, axis=0))
+            Yjs = tf.constant(np.delete(Y, ind, axis=0))
             fmean, fvar = self.build_predict_xy(Xjs, Yjs, Xi, full_cov=False)
             logp_i = self.likelihood.predict_density(fmean, fvar, Yi)
             return logp_i
+
+        # k-folds instead of LOO, for speed
+        k = 10
+        n = self.X.shape[0] // 5
 
         X = self.X.value
         Y = self.Y.value
 
         with self.tf_mode():
-            logps = [density_i(i) for i in range(X.shape[0])]
+            logps = [density_i(i, n) for i in range(k)]
             f = tf.reduce_sum(logps)
             g, = tf.gradients(f, self._free_vars)
 
