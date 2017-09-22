@@ -104,6 +104,7 @@ class GPR(GPModel):
         """ Build the Leave-One-Out log predictive probability loss
             function
         """
+        print('CV_LOSS')
 
         def density_i(i, n):
             ind = slice(i, i+n)
@@ -117,7 +118,7 @@ class GPR(GPModel):
 
         # k-folds instead of LOO, for speed
         k = 10
-        n = self.X.shape[0] // 5
+        n = self.X.shape[0] // k
 
         X = self.X.value
         Y = self.Y.value
